@@ -23,3 +23,7 @@ void Obstruction::update(float deltaTime)
 void Obstruction::start()
 {
 }
+
+void Obstruction::draw(sf::RenderWindow *)
+{
+}

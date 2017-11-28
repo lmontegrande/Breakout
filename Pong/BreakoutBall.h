@@ -8,25 +8,22 @@
 #include <SFML/Main.hpp>
 #include "GameObject.h"
 
-class Ball : public GameObject
-{ 
+class BreakoutBall : public GameObject
+{
 private:
-public: 
-	sf::CircleShape circleShape; 
+public:
+	sf::CircleShape circleShape;
 	sf::Vector2f directionVector2f;
 	sf::Vector2f startingPositionVector2f;
 	sf::Vector2f windowSizeVector2f;
-	float speed; 
+	float speed;
 	float speedModif;
 
-	Ball();
-	Ball(sf::Vector2f startPos, sf::Vector2f windowSize, float ballRadius, float s, float sm);
-	~Ball();
+	BreakoutBall();
+	BreakoutBall(sf::Vector2f startPos, sf::Vector2f windowSize, float ballRadius, float s, float sm);
+	~BreakoutBall();
 	void update(float deltaTime);
-	void changeDirection(float angle);
-	void changeDirection(sf::Vector2f direction);
-	void reverseY();
-	void reverseX();
+	void setDirection(sf::Vector2f dir);
 	void start();
 
 	// Inherited via GameObject

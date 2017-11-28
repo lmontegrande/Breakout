@@ -52,6 +52,10 @@ void Paddle::ai(float deltaTime) {
 	rectangleShape.move(deltaPos - rectangleShape.getPosition());
 }
 
+void Paddle::draw(sf::RenderWindow *)
+{
+}
+
 float Paddle::clampF(float value, float min, float max) {
 	if (value < min)
 		return min;

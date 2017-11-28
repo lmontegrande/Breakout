@@ -26,4 +26,7 @@ public:
 	void SetPositionFromCenter(sf::Vector2f targetPosition);
 	static float clampF(float value, float min, float max);
 	void ai(float deltaTime);
+
+	// Inherited via GameObject
+	virtual void draw(sf::RenderWindow *) override;
 };

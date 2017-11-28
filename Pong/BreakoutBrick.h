@@ -8,23 +8,18 @@
 #include <SFML/Main.hpp>
 #include "GameObject.h"
 
-class Obstruction : public GameObject
+class BreakoutBrick : public GameObject
 {
 public:
-	sf::CircleShape circleShape; // Includes pullRadius and position
-	sf::Vector2f direction;
-	sf::CircleShape *ballCircleShape;
-	float pullStrength;
-	float moveSpeed;
+	sf::RectangleShape rectangleShape;
+	sf::Vector2f startingPositionVector2f;
 
-	Obstruction();
-	~Obstruction();
+	BreakoutBrick();
+	BreakoutBrick(sf::Vector2f startingPosition, sf::Vector2f rectangleSize);
+	~BreakoutBrick();
 
 	// Inherited via GameObject
 	virtual void update(float deltaTime) override;
 	virtual void start() override;
-
-	// Inherited via GameObject
 	virtual void draw(sf::RenderWindow *) override;
 };
-
