@@ -19,6 +19,7 @@ BreakoutBall::~BreakoutBall()
 void BreakoutBall::start()
 {
 	circleShape.setPosition(startingPositionVector2f);
+	directionVector2f = sf::Vector2f(0, 1);
 }
 
 void BreakoutBall::draw(sf::RenderWindow* window)
@@ -55,4 +56,16 @@ void BreakoutBall::update(float deltaTime)
 
 void BreakoutBall::setDirection(sf::Vector2f direction) {
 	directionVector2f = direction/(direction.x*direction.x + direction.y*direction.y);
+}
+
+void BreakoutBall::setDirection(float angle) {
+	directionVector2f = sf::Vector2f(cos(angle), sin(angle));
+}
+
+void BreakoutBall::reverseY() {
+	directionVector2f.y = -directionVector2f.y;
+}
+
+void BreakoutBall::reverseX() {
+	directionVector2f.x = -directionVector2f.x;
 }

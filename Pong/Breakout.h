@@ -22,6 +22,8 @@ public:
 	void render();
 	void poll();
 	void generateBlocks();
+	void die();
 	bool rectCircleColliding(sf::CircleShape ball, sf::RectangleShape paddle);
+	float clampF(float value, float min, float max);
 };
 

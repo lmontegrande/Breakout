@@ -24,6 +24,9 @@ public:
 	~BreakoutBall();
 	void update(float deltaTime);
 	void setDirection(sf::Vector2f dir);
+	void setDirection(float angle);
+	void reverseY();
+	void reverseX();
 	void start();
 
 	// Inherited via GameObject

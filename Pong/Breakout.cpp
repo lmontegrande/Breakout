@@ -17,11 +17,12 @@ using namespace sf;
 // Game Variables
 bool gameIsDone;
 int level;
+int lives;
 RenderWindow* window;
 Vector2f windowSizeVectorf;
 Vector2f windowCenterVectorf;
 vector<GameObject*> gameObjects;
-vector<BreakoutBrick> bricks;
+vector<BreakoutBrick*> bricks;
 Clock gameClock;
 BreakoutBall* ball;
 BreakoutPaddle* paddle;
@@ -57,6 +58,7 @@ void Breakout::init() {
 	// Init Settings
 	gameIsDone = false;
 	level = 1;
+	lives = 3;
 
 	// Init static objects
 	Vector2f paddleWidth(windowSizeVectorf.x/6, windowSizeVectorf.y/30);
@@ -84,13 +86,37 @@ void Breakout::update()
 }
 
 void Breakout::handleCollision() {
-	if (rectCircleColliding(ball->circleShape, paddle->rectangleShape)) {
-		ball->setDirection(Vector2f(0, -1));
+	// Ball Hits Floor
+	if (ball->circleShape.getPosition().y + ball->circleShape.getRadius() >= window->getSize().y) {
+		die();
+		window->setTitle(to_string(lives));
 	}
 
-	for each (BreakoutBrick brick in bricks) {
-		if (rectCircleColliding(ball->circleShape, brick.rectangleShape)) {
-			ball->setDirection(Vector2f(0, 1));
+	// Ball Hits Paddle
+	if (rectCircleColliding(ball->circleShape, paddle->rectangleShape)) {
+		float deltaX = ball->circleShape.getPosition().x - paddle->rectangleShape.getPosition().x;
+		float rectHalfWidth = paddle->rectangleShape.getSize().x / 2;
+		float diff = clampF(deltaX / rectHalfWidth, -1, 1);
+		Vector2f newDirection = Vector2f(diff, -1);
+		Vector2f newDirectionNormalized = newDirection / sqrt(newDirection.x * newDirection.x + newDirection.y * newDirection.y);
+		ball->setDirection(newDirectionNormalized);
+	}
+
+	// Ball Hits Brick
+	for (int x=0; x < bricks.size(); x++) {
+		if (rectCircleColliding(ball->circleShape, bricks[x]->rectangleShape)) {
+			Vector2f brickPosition = bricks[x]->rectangleShape.getPosition();
+			Vector2f ballPosition = ball->circleShape.getPosition();
+			Vector2f brickSize = bricks[x]->rectangleShape.getSize();
+			float ballRadius = ball->circleShape.getRadius();
+			float padding = 2;
+			if (ballPosition.x - ballRadius + padding >= brickPosition.x + (brickSize.x/2) || ballPosition.x + ballRadius - padding <= brickPosition.x - (brickSize.x/2)) {
+				ball->reverseX();
+			} else {
+				ball->reverseY();
+			}
+			gameObjects.erase(remove(gameObjects.begin(), gameObjects.end(), bricks[x]), gameObjects.end());
+			bricks.erase(bricks.begin() + x);
 		}
 	}
 }
@@ -123,9 +149,16 @@ void Breakout::generateBlocks() {
 	float cellHeightOffset = (cellHeight - cellPositionY) + 7;
 	for (int y = 1; y < 4; y++) {
 		for (int x = 1; x < 5; x++) {
-			gameObjects.push_back(new BreakoutBrick(Vector2f(cellPositionX * (x+1), cellPositionY * (y+1)), Vector2f(cellWidth - cellWidthOffset, cellHeight - cellHeightOffset)));
+			BreakoutBrick* brickPtr = new BreakoutBrick(Vector2f(cellPositionX * (x + 1), cellPositionY * (y + 1)), Vector2f(cellWidth - cellWidthOffset, cellHeight - cellHeightOffset));
+			gameObjects.push_back(brickPtr);
+			bricks.push_back(brickPtr);
 		}
 	}
+}
+
+void Breakout::die() {
+	lives--;
+	ball->start();
 }
 
 bool Breakout::rectCircleColliding(CircleShape ball, RectangleShape paddle) {
@@ -138,10 +171,18 @@ bool Breakout::rectCircleColliding(CircleShape ball, RectangleShape paddle) {
 		ball.getPosition().y - ballRadius <= paddle.getPosition().y + paddleSize.y / 2)
 		return true;
 	if (ball.getPosition().x + ballRadius >= paddle.getPosition().x - paddleSize.x / 2 &&
-		ball.getPosition().x + ballRadius <= paddle.getPosition().x - paddleSize.x / 2 &&
+		ball.getPosition().x + ballRadius <= paddle.getPosition().x + paddleSize.x / 2 &&
 		ball.getPosition().y + ballRadius >= paddle.getPosition().y - paddleSize.y / 2 &&
 		ball.getPosition().y - ballRadius <= paddle.getPosition().y + paddleSize.y / 2)
 		return true;
 
 	return false;
+}
+
+float Breakout::clampF(float value, float min, float max) {
+	if (value < min)
+		return min;
+	if (value > max)
+		return max;
+	return value;
 }
