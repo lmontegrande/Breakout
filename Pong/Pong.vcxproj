@@ -159,6 +159,7 @@
     <ClCompile Include="Obstruction.cpp" />
     <ClCompile Include="Paddle.cpp" />
     <ClCompile Include="Pong.cpp" />
+    <ClCompile Include="UI.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Ball.h" />
@@ -170,6 +171,7 @@
     <ClInclude Include="Obstruction.h" />
     <ClInclude Include="Paddle.h" />
     <ClInclude Include="Pong.h" />
+    <ClInclude Include="UI.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

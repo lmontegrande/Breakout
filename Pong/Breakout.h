@@ -18,11 +18,14 @@ public:
 	void init();
 	void start();
 	void update();
+	void cleanUp();
 	void handleCollision();
 	void render();
 	void poll();
 	void generateBlocks();
+	void winRound();
 	void die();
+	void updateUI();
 	bool rectCircleColliding(sf::CircleShape ball, sf::RectangleShape paddle);
 	float clampF(float value, float min, float max);
 };

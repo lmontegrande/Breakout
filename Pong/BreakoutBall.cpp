@@ -2,8 +2,9 @@
 
 BreakoutBall::BreakoutBall() {}
 
-BreakoutBall::BreakoutBall(sf::Vector2f staringPosition, sf::Vector2f windowSize, float ballRadius, float s, float sm) {
+BreakoutBall::BreakoutBall(sf::Vector2f staringPosition, sf::Vector2f windowSize, float ballRadius, float s, float sm, sf::Sound* hitSound) {
 	startingPositionVector2f = staringPosition;
+	hitWallSound = hitSound;
 	windowSizeVector2f = windowSize;
 	directionVector2f = sf::Vector2f(0, 1);
 	circleShape.setRadius(ballRadius);
@@ -38,14 +39,17 @@ void BreakoutBall::update(float deltaTime)
 
 	// Hit left
 	if (currentPosition.x <= radius) {
+		hitWallSound->play();
 		directionVector2f.x = abs(directionVector2f.x);
 	}
 	// Hit right
 	if (currentPosition.x >= windowSizeVector2f.x - radius) {
+		hitWallSound->play();
 		directionVector2f.x = -abs(directionVector2f.x);
 	}
 	// Hit top
 	if(currentPosition.y <= radius) {
+		hitWallSound->play();
 		directionVector2f.y = abs(directionVector2f.y);
 	}
 	// Hit bottom

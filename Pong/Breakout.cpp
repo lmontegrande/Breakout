@@ -10,22 +10,41 @@
 #include "BreakoutPaddle.h"
 #include "BreakoutBall.h"
 #include "BreakoutBrick.h"
+#include "UI.h"
 
 using namespace std;
 using namespace sf;
 
 // Game Variables
 bool gameIsDone;
+bool roundIsDone;
 int level;
+int stage;
 int lives;
+int score;
 RenderWindow* window;
 Vector2f windowSizeVectorf;
 Vector2f windowCenterVectorf;
 vector<GameObject*> gameObjects;
 vector<BreakoutBrick*> bricks;
+UI* ui;
 Clock gameClock;
 BreakoutBall* ball;
 BreakoutPaddle* paddle;
+
+// Note to self, make an AudioManager class next time
+Sound* paddleSound;
+Sound* wallSound;
+Sound* damageBrickSound;
+Sound* destroyBrickSound;
+Sound* loseLifeSound;
+Sound* winLevelSound;
+SoundBuffer sound1;
+SoundBuffer sound2;
+SoundBuffer sound3;
+SoundBuffer sound4;
+SoundBuffer sound5;
+SoundBuffer sound6;
 
 Breakout::Breakout() {} // Stub
 Breakout::~Breakout() {} // Stub
@@ -33,22 +52,37 @@ Breakout::~Breakout() {} // Stub
 void Breakout::play()
 {
 	init();
-	generateBlocks();
-	start();
-
+	updateUI();
+	
+	// Start State
 	while (!gameIsDone && window->isOpen()) {
-		poll(); // For Windows
-		update();
-		handleCollision();
+		generateBlocks();
+		start();
+		gameClock.restart();
+		roundIsDone = false;
+		// Round State
+		while (!roundIsDone && window->isOpen()) {
+			poll(); // For Windows
+			update();
+			handleCollision();
+			render();
+		}
+	}
+
+	// End State
+	while (window->isOpen()) {
+		poll();
 		render();
 	}
+
+	cleanUp();
 }
 
 void Breakout::init() {
 	// Get Path
 	char path[MAX_PATH];
 	GetCurrentDirectoryA(MAX_PATH, path);
-	MessageBoxA(NULL, path, "Current Directory", MB_OK);
+	//MessageBoxA(NULL, path, "Current Directory", MB_OK);
 
 	// Init Window
 	windowSizeVectorf = Vector2f(600, 600);
@@ -58,16 +92,33 @@ void Breakout::init() {
 	// Init Settings
 	gameIsDone = false;
 	level = 1;
+	stage = 1;
 	lives = 3;
 
-	// Init static objects
+	// Init sounds
+	sound1.loadFromFile("Resources/Blip_Select.wav");
+	sound2.loadFromFile("Resources/Blip_Select2.wav");
+	sound3.loadFromFile("Resources/Blip_Select3.wav");
+	sound4.loadFromFile("Resources/Blip_Select4.wav");
+	sound5.loadFromFile("Resources/Hit_Hurt.wav");
+	sound6.loadFromFile("Resources/Pickup_Coin2.wav");
+	paddleSound = new Sound(sound1);
+	wallSound = new Sound(sound2);
+	damageBrickSound = new Sound(sound3);
+	destroyBrickSound = new Sound(sound4);
+	loseLifeSound = new Sound(sound5);
+	winLevelSound = new Sound(sound6);
+
+	// Init persistent objects
 	Vector2f paddleWidth(windowSizeVectorf.x/6, windowSizeVectorf.y/30);
 	Vector2f paddlePosition(windowSizeVectorf.x/2, windowSizeVectorf.y*.9);
-	ball = new BreakoutBall(windowCenterVectorf, windowSizeVectorf, 10, 100, 50);
-	paddle = new BreakoutPaddle(paddlePosition, paddleWidth, windowSizeVectorf, 100);
+	ball = new BreakoutBall(windowCenterVectorf, windowSizeVectorf, 10, 300, 300, wallSound);
+	paddle = new BreakoutPaddle(paddlePosition, paddleWidth, windowSizeVectorf, 200);
+	ui = new UI(windowSizeVectorf, windowCenterVectorf);
 
 	gameObjects.push_back(paddle);
 	gameObjects.push_back(ball);
+	gameObjects.push_back(ui);
 }
 
 void Breakout::start() {
@@ -85,6 +136,26 @@ void Breakout::update()
 	}
 }
 
+void Breakout::cleanUp() {
+	// Broken?
+	/*for each (GameObject* gameObject in gameObjects) {
+		delete gameObject;
+	}
+	for each (BreakoutBrick* brick in bricks) {
+		delete brick;
+	}*/
+	delete window;
+	delete ui;
+	delete ball;
+	delete paddle;
+	delete paddleSound;
+	delete wallSound;
+	delete damageBrickSound;
+	delete destroyBrickSound;
+	delete loseLifeSound;
+	delete winLevelSound;
+}
+
 void Breakout::handleCollision() {
 	// Ball Hits Floor
 	if (ball->circleShape.getPosition().y + ball->circleShape.getRadius() >= window->getSize().y) {
@@ -94,6 +165,7 @@ void Breakout::handleCollision() {
 
 	// Ball Hits Paddle
 	if (rectCircleColliding(ball->circleShape, paddle->rectangleShape)) {
+		paddleSound->play();
 		float deltaX = ball->circleShape.getPosition().x - paddle->rectangleShape.getPosition().x;
 		float rectHalfWidth = paddle->rectangleShape.getSize().x / 2;
 		float diff = clampF(deltaX / rectHalfWidth, -1, 1);
@@ -105,6 +177,10 @@ void Breakout::handleCollision() {
 	// Ball Hits Brick
 	for (int x=0; x < bricks.size(); x++) {
 		if (rectCircleColliding(ball->circleShape, bricks[x]->rectangleShape)) {
+			if (bricks[x]->wasHitLastFrame) {
+				break;
+			}
+			bricks[x]->wasHitLastFrame = true;
 			Vector2f brickPosition = bricks[x]->rectangleShape.getPosition();
 			Vector2f ballPosition = ball->circleShape.getPosition();
 			Vector2f brickSize = bricks[x]->rectangleShape.getSize();
@@ -115,8 +191,22 @@ void Breakout::handleCollision() {
 			} else {
 				ball->reverseY();
 			}
-			gameObjects.erase(remove(gameObjects.begin(), gameObjects.end(), bricks[x]), gameObjects.end());
-			bricks.erase(bricks.begin() + x);
+
+			if (bricks[x]->getHit()) {
+				destroyBrickSound->play();
+				gameObjects.erase(remove(gameObjects.begin(), gameObjects.end(), bricks[x]), gameObjects.end());
+				bricks.erase(bricks.begin() + x);
+				score += 1 * level;
+				updateUI();
+				if (bricks.size() == 0) {
+					winRound();
+				}
+			} else {
+				damageBrickSound->play();
+			}
+			break;
+		} else {
+			bricks[x]->wasHitLastFrame = false;
 		}
 	}
 }
@@ -147,18 +237,56 @@ void Breakout::generateBlocks() {
 	float cellPositionY = windowSizeVectorf.y / 11;
 	float cellWidthOffset = (cellWidth - cellPositionX) + 7;
 	float cellHeightOffset = (cellHeight - cellPositionY) + 7;
+
 	for (int y = 1; y < 4; y++) {
 		for (int x = 1; x < 5; x++) {
-			BreakoutBrick* brickPtr = new BreakoutBrick(Vector2f(cellPositionX * (x + 1), cellPositionY * (y + 1)), Vector2f(cellWidth - cellWidthOffset, cellHeight - cellHeightOffset));
+			int hp = level;
+			bool isMoving = false;
+			bool isStealth = false;
+			if (stage % 2 == 0) {
+				isMoving = true;
+			}
+			if (stage % 3 == 0) {
+				isStealth = true;
+			}
+			Vector2f startingPosition = Vector2f(cellPositionX * (x + 1), cellPositionY * (y + 1));
+			Vector2f size = Vector2f(cellWidth - cellWidthOffset, cellHeight - cellHeightOffset);
+			BreakoutBrick* brickPtr = new BreakoutBrick(startingPosition, size, hp, isMoving, isStealth);
 			gameObjects.push_back(brickPtr);
 			bricks.push_back(brickPtr);
 		}
 	}
 }
 
+void Breakout::winRound() {
+	winLevelSound->play();
+	roundIsDone = true;
+	stage++;
+	if (stage == 4) {
+		ball->speed += ball->speedModif;
+		paddle->speed += ball->speedModif;
+		stage = 1;
+		level++;
+	}
+}
+
 void Breakout::die() {
-	lives--;
-	ball->start();
+	loseLifeSound->play();
+	if (lives <= 0) {
+		gameIsDone = true;
+		roundIsDone = true;
+		ui->showEndText = true;
+	} else {
+		lives--;
+		updateUI();
+		ball->start();
+		paddle->start();
+	}
+}
+
+void Breakout::updateUI() {
+	ui->setLives(lives);
+	ui->setScore(score);
 }
 
 bool Breakout::rectCircleColliding(CircleShape ball, RectangleShape paddle) {

@@ -16,11 +16,12 @@ public:
 	sf::Vector2f directionVector2f;
 	sf::Vector2f startingPositionVector2f;
 	sf::Vector2f windowSizeVector2f;
+	sf::Sound* hitWallSound;
 	float speed;
 	float speedModif;
 
 	BreakoutBall();
-	BreakoutBall(sf::Vector2f startPos, sf::Vector2f windowSize, float ballRadius, float s, float sm);
+	BreakoutBall(sf::Vector2f startPos, sf::Vector2f windowSize, float ballRadius, float s, float sm, sf::Sound* hitSound);
 	~BreakoutBall();
 	void update(float deltaTime);
 	void setDirection(sf::Vector2f dir);
